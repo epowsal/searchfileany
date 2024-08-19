@@ -4,6 +4,7 @@ package main
 import (
 	"bytespool"
 	"fmt"
+	"log"
 	"os"
 	"regexp"
 	"strconv"
@@ -16,7 +17,7 @@ import (
 func main() {
 	if len(os.Args) == 1 {
 		fmt.Println(`help:
-searchfileany folder [--searchpathregex= -pr=] [--nameregex= -nr=]  [--namepathregex= -npr=] [--contentregex= -cr=] [--directoryonly -do] [--fileonly(default) -fo] [--dirandfile -df] [--deep=] [--timebegin=2006-01-02T15:04:05Z07:00] [--timeend=2006-01-02T15:04:05Z07:00] [--replacewith= match got #0-99 -rw] [--replacewithnorename] [--newpathreplacewith= match got #0-99 -nprw] [--newpathnomove]`,
+searchfileany folder [--searchpathregex= -pr=] [--nameregex= -nr=]  [--namepathregex= -npr=] [--contentregex= -cr=] [--directoryonly -do] [--fileonly(default) -fo] [--dirandfile -df] [--deep=] [--timebegin=2006-01-02T15:04:05Z07:00] [--timeend=2006-01-02T15:04:05Z07:00] [--replacewith= match got #0-99 -rw] [--replacewithnorename] [--newpathreplacewith= match got #0-99 -nprw] [--newpathnomove] [--removeResultFile -rf] [--removeResultDir -rd] `,
 		)
 		return
 	}
@@ -26,7 +27,7 @@ searchfileany folder [--searchpathregex= -pr=] [--nameregex= -nr=]  [--namepathr
 	var replacewithnorename = false
 	var newpathnomove = false
 	var pathrestr, filenamerestr, cttrestr, replacewithstr, newpathreplacewith string
-	var namerestr_mapa bool
+	var namerestr_mapa, removeResultFile, removeResultDir bool
 	var deep = 1 << 30
 	var timebegin time.Time
 	var timeend time.Time = time.Unix(toolfunc.MAXINT64, 0)
@@ -76,6 +77,14 @@ searchfileany folder [--searchpathregex= -pr=] [--nameregex= -nr=]  [--namepathr
 		} else if strings.HasPrefix(os.Args[i], "--dirandfile") {
 			directoryonly = true
 			fileonly = true
+		} else if strings.HasPrefix(os.Args[i], "--removeResultFile") {
+			removeResultFile = true
+		} else if strings.HasPrefix(os.Args[i], "--removeResultDir") {
+			removeResultDir = true
+		} else if strings.HasPrefix(os.Args[i], "-rf") {
+			removeResultFile = true
+		} else if strings.HasPrefix(os.Args[i], "-rd") {
+			removeResultDir = true
 		} else if strings.HasPrefix(os.Args[i], "-cr=") {
 			cttrestr = os.Args[i][len("-cr="):]
 		} else if strings.HasPrefix(os.Args[i], "-do") {
@@ -139,18 +148,38 @@ searchfileany folder [--searchpathregex= -pr=] [--nameregex= -nr=]  [--namepathr
 	if showdetail {
 		fmt.Println("timeend", timeend)
 	}
-	searchfileany(&results, sdpath, sdpath, pathre, filenamere, cttre, directoryonly, fileonly, showdetail, deep, 1, timebegin, timeend, replacewithstr, replacewithnorename, newpathreplacewith, newpathnomove, namerestr_mapa)
+	searchfileany(&results, sdpath, sdpath, pathre, filenamere, cttre, directoryonly, fileonly, showdetail, deep, 1, timebegin, timeend, replacewithstr, replacewithnorename, newpathreplacewith, newpathnomove, namerestr_mapa, removeResultFile, removeResultDir)
 	// for(int i=0;i<results.size();i++){
 	//     fmt.Println(results[i])
 	// }
 	if showdetail {
 		fmt.Println("total:", len(results))
+		if removeResultFile {
+			for i := 0; i < len(results); i++ {
+				rme := os.Remove(results[i])
+				if rme != nil {
+					log.Println("remove file error:", results[i], rme)
+				} else {
+					fmt.Println("remove file ok:", results[i])
+				}
+			}
+		}
+		if removeResultDir {
+			for i := 0; i < len(results); i++ {
+				rme := os.RemoveAll(results[i])
+				if rme != nil {
+					log.Println("remove dir error:", results[i], rme)
+				} else {
+					fmt.Println("remove dir ok:", results[i])
+				}
+			}
+		}
 	}
 
 	//return a.exec();
 }
 
-func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenameregex, contentregex *regexp.Regexp, directoryonly, fileonly, showdetail bool, maxdeep, curdeep int, timebegin, timeend time.Time, replacewithstr string, replacewithnorename bool, newpathreplacewith string, newpathnomove bool, namerestr_mapa bool) int {
+func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenameregex, contentregex *regexp.Regexp, directoryonly, fileonly, showdetail bool, maxdeep, curdeep int, timebegin, timeend time.Time, replacewithstr string, replacewithnorename bool, newpathreplacewith string, newpathnomove bool, namerestr_mapa, removeResultFile, removeResultDir bool) int {
 	if curdeep > maxdeep {
 		if showdetail {
 			fmt.Println("curdeep > maxdeep", curdeep, maxdeep)
@@ -362,7 +391,7 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 						}
 					}
 
-					searchfileany(results, rootdir, fullpath, pathregex, filenameregex, contentregex, directoryonly, fileonly, showdetail, maxdeep, curdeep+1, timebegin, timeend, replacewithstr, replacewithnorename, newpathreplacewith, newpathnomove, namerestr_mapa)
+					searchfileany(results, rootdir, fullpath, pathregex, filenameregex, contentregex, directoryonly, fileonly, showdetail, maxdeep, curdeep+1, timebegin, timeend, replacewithstr, replacewithnorename, newpathreplacewith, newpathnomove, namerestr_mapa, removeResultFile, removeResultDir)
 				}
 			}
 		} else {
@@ -606,7 +635,7 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 						}
 					}
 
-					searchfileany(results, rootdir, fullpath, pathregex, filenameregex, contentregex, directoryonly, fileonly, showdetail, maxdeep, curdeep+1, timebegin, timeend, replacewithstr, replacewithnorename, newpathreplacewith, newpathnomove, namerestr_mapa)
+					searchfileany(results, rootdir, fullpath, pathregex, filenameregex, contentregex, directoryonly, fileonly, showdetail, maxdeep, curdeep+1, timebegin, timeend, replacewithstr, replacewithnorename, newpathreplacewith, newpathnomove, namerestr_mapa, removeResultFile, removeResultDir)
 				}
 			}
 		}
