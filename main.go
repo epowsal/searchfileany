@@ -154,26 +154,6 @@ searchfileany folder [--searchpathregex= -pr=] [--nameregex= -nr=]  [--namepathr
 	// }
 	if showdetail {
 		fmt.Println("total:", len(results))
-		if removeResultFile {
-			for i := 0; i < len(results); i++ {
-				rme := os.Remove(results[i])
-				if rme != nil {
-					log.Println("remove file error:", results[i], rme)
-				} else {
-					fmt.Println("remove file ok:", results[i])
-				}
-			}
-		}
-		if removeResultDir {
-			for i := 0; i < len(results); i++ {
-				rme := os.RemoveAll(results[i])
-				if rme != nil {
-					log.Println("remove dir error:", results[i], rme)
-				} else {
-					fmt.Println("remove dir ok:", results[i])
-				}
-			}
-		}
 	}
 
 	//return a.exec();
@@ -302,6 +282,14 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 
 										fmt.Println(fullpath)
 										*results = append(*results, fullpath)
+										if removeResultFile {
+											rme := os.Remove(fullpath)
+											if rme != nil {
+												log.Println("remove file error:", fullpath, rme)
+											} else {
+												fmt.Println("remove file ok:", fullpath)
+											}
+										}
 
 										prerd = curd
 										break
@@ -313,6 +301,16 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 												}
 												fmt.Println(fullpath)
 												*results = append(*results, fullpath)
+
+												if removeResultFile {
+													rme := os.Remove(fullpath)
+													if rme != nil {
+														log.Println("remove file error:", fullpath, rme)
+													} else {
+														fmt.Println("remove file ok:", fullpath)
+													}
+												}
+
 											}
 											bclose = true
 											ff.Close()
@@ -337,6 +335,15 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 										}
 										fmt.Println(fullpath)
 										*results = append(*results, fullpath)
+
+										if removeResultFile {
+											rme := os.Remove(fullpath)
+											if rme != nil {
+												log.Println("remove file error:", fullpath, rme)
+											} else {
+												fmt.Println("remove file ok:", fullpath)
+											}
+										}
 									}
 								} else {
 									fnma := filenameregex.FindAllStringSubmatchIndex(fullpath, -1)
@@ -346,14 +353,33 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 										}
 										fmt.Println(fullpath)
 										*results = append(*results, fullpath)
+
+										if removeResultFile {
+											rme := os.Remove(fullpath)
+											if rme != nil {
+												log.Println("remove file error:", fullpath, rme)
+											} else {
+												fmt.Println("remove file ok:", fullpath)
+											}
+										}
+
 									}
 								}
 							} else {
 								if showdetail {
-									fmt.Println("2found file:", fullpath)
+									fmt.Println("show detail found file:", fullpath)
 								}
 								fmt.Println(fullpath)
 								*results = append(*results, fullpath)
+								if removeResultFile {
+									rme := os.Remove(fullpath)
+									if rme != nil {
+										log.Println("remove file error:", fullpath, rme)
+									} else {
+										fmt.Println("remove file ok:", fullpath)
+									}
+								}
+
 							}
 						}
 					}
@@ -371,6 +397,15 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 									}
 									fmt.Println(fullpath)
 									*results = append(*results, fullpath)
+
+									if removeResultDir {
+										rme := os.RemoveAll(fullpath)
+										if rme != nil {
+											log.Println("remove dir error:", fullpath, rme)
+										} else {
+											fmt.Println("remove dir ok:", fullpath)
+										}
+									}
 								}
 							} else {
 								fnma := filenameregex.FindAllStringSubmatchIndex(fullpath, -1)
@@ -380,6 +415,15 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 									}
 									fmt.Println(fullpath)
 									*results = append(*results, fullpath)
+
+									if removeResultDir {
+										rme := os.RemoveAll(fullpath)
+										if rme != nil {
+											log.Println("remove dir error:", fullpath, rme)
+										} else {
+											fmt.Println("remove dir ok:", fullpath)
+										}
+									}
 								}
 							}
 						} else {
@@ -388,6 +432,15 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 							}
 							fmt.Println(fullpath)
 							*results = append(*results, fullpath)
+
+							if removeResultDir {
+								rme := os.RemoveAll(fullpath)
+								if rme != nil {
+									log.Println("remove dir error:", fullpath, rme)
+								} else {
+									fmt.Println("remove dir ok:", fullpath)
+								}
+							}
 						}
 					}
 
@@ -502,6 +555,15 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 										}
 										*results = append(*results, fullpath)
 
+										if removeResultFile {
+											rme := os.Remove(fullpath)
+											if rme != nil {
+												log.Println("remove file error:", fullpath, rme)
+											} else {
+												fmt.Println("remove file ok:", fullpath)
+											}
+										}
+
 										prerd = curd
 										break
 									} else {
@@ -523,6 +585,15 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 													fmt.Println(fullpath)
 												}
 												*results = append(*results, fullpath)
+
+												if removeResultFile {
+													rme := os.Remove(fullpath)
+													if rme != nil {
+														log.Println("remove file error:", fullpath, rme)
+													} else {
+														fmt.Println("remove file ok:", fullpath)
+													}
+												}
 											}
 											bclose = true
 											ff.Close()
@@ -558,6 +629,15 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 											fmt.Println(fullpath)
 										}
 										*results = append(*results, fullpath)
+
+										if removeResultFile {
+											rme := os.Remove(fullpath)
+											if rme != nil {
+												log.Println("remove file error:", fullpath, rme)
+											} else {
+												fmt.Println("remove file ok:", fullpath)
+											}
+										}
 									}
 								} else {
 									fnma := filenameregex.FindAllStringSubmatchIndex(fullpath, -1)
@@ -578,6 +658,15 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 											fmt.Println(fullpath)
 										}
 										*results = append(*results, fullpath)
+
+										if removeResultFile {
+											rme := os.Remove(fullpath)
+											if rme != nil {
+												log.Println("remove file error:", fullpath, rme)
+											} else {
+												fmt.Println("remove file ok:", fullpath)
+											}
+										}
 									}
 								}
 							} else {
@@ -598,6 +687,15 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 								}
 
 								*results = append(*results, fullpath)
+
+								if removeResultFile {
+									rme := os.Remove(fullpath)
+									if rme != nil {
+										log.Println("remove file error:", fullpath, rme)
+									} else {
+										fmt.Println("remove file ok:", fullpath)
+									}
+								}
 							}
 						}
 					}
@@ -615,6 +713,15 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 									}
 									fmt.Println(fullpath)
 									*results = append(*results, fullpath)
+
+									if removeResultDir {
+										rme := os.Remove(fullpath)
+										if rme != nil {
+											log.Println("remove dir error:", fullpath, rme)
+										} else {
+											fmt.Println("remove dir ok:", fullpath)
+										}
+									}
 								}
 							} else {
 								fnma := filenameregex.FindAllStringSubmatchIndex(fullpath, -1)
@@ -624,6 +731,15 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 									}
 									fmt.Println(fullpath)
 									*results = append(*results, fullpath)
+
+									if removeResultDir {
+										rme := os.Remove(fullpath)
+										if rme != nil {
+											log.Println("remove dir error:", fullpath, rme)
+										} else {
+											fmt.Println("remove dir ok:", fullpath)
+										}
+									}
 								}
 							}
 						} else {
@@ -632,6 +748,15 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 							}
 							fmt.Println(fullpath)
 							*results = append(*results, fullpath)
+
+							if removeResultDir {
+								rme := os.Remove(fullpath)
+								if rme != nil {
+									log.Println("remove dir error:", fullpath, rme)
+								} else {
+									fmt.Println("remove dir ok:", fullpath)
+								}
+							}
 						}
 					}
 
