@@ -328,65 +328,63 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 							}
 						}
 					} else {
-						if directoryonly == false || fileonly == true {
-							if filenameregex != nil {
-								if namerestr_mapa == false {
-									fnma := filenameregex.FindAllStringSubmatchIndex(fdls[i].Name(), -1)
-									if len(fnma) > 0 {
-										if showdetail {
-											fmt.Println("found name pass file:", fullpath)
-										}
-										fmt.Println(fullpath)
-										*results = append(*results, fullpath)
-
-										if removeResultFile {
-											rme := os.Remove(fullpath)
-											if rme != nil {
-												log.Println("remove file error:", fullpath, rme)
-											} else {
-												fmt.Println("remove file ok:", fullpath)
-											}
-										}
+						if filenameregex != nil {
+							if namerestr_mapa == false {
+								fnma := filenameregex.FindAllStringSubmatchIndex(fdls[i].Name(), -1)
+								if len(fnma) > 0 {
+									if showdetail {
+										fmt.Println("found name pass file:", fullpath)
 									}
-								} else {
-									fnma := filenameregex.FindAllStringSubmatchIndex(fullpath, -1)
-									if len(fnma) > 0 {
-										if showdetail {
-											fmt.Println("found name pass file:", fullpath)
-										}
-										fmt.Println(fullpath)
-										*results = append(*results, fullpath)
+									fmt.Println(fullpath)
+									*results = append(*results, fullpath)
 
-										if removeResultFile {
-											rme := os.Remove(fullpath)
-											if rme != nil {
-												log.Println("remove file error:", fullpath, rme)
-											} else {
-												fmt.Println("remove file ok:", fullpath)
-											}
+									if removeResultFile {
+										rme := os.Remove(fullpath)
+										if rme != nil {
+											log.Println("remove file error:", fullpath, rme)
+										} else {
+											fmt.Println("remove file ok:", fullpath)
 										}
-
 									}
 								}
 							} else {
-								if showdetail {
-									fmt.Println("show detail found file:", fullpath)
-								}
-								fmt.Println(fullpath)
-								*results = append(*results, fullpath)
-								if removeResultFile {
-									rme := os.Remove(fullpath)
-									if rme != nil {
-										log.Println("remove file error:", fullpath, rme)
-									} else {
-										fmt.Println("remove file ok:", fullpath)
+								fnma := filenameregex.FindAllStringSubmatchIndex(fullpath, -1)
+								if len(fnma) > 0 {
+									if showdetail {
+										fmt.Println("found name pass file:", fullpath)
 									}
-								}
+									fmt.Println(fullpath)
+									*results = append(*results, fullpath)
 
+									if removeResultFile {
+										rme := os.Remove(fullpath)
+										if rme != nil {
+											log.Println("remove file error:", fullpath, rme)
+										} else {
+											fmt.Println("remove file ok:", fullpath)
+										}
+									}
+
+								}
 							}
+						} else {
+							if showdetail {
+								fmt.Println("show detail found file:", fullpath)
+							}
+							fmt.Println(fullpath)
+							*results = append(*results, fullpath)
+							if removeResultFile {
+								rme := os.Remove(fullpath)
+								if rme != nil {
+									log.Println("remove file error:", fullpath, rme)
+								} else {
+									fmt.Println("remove file ok:", fullpath)
+								}
+							}
+
 						}
 					}
-				} else {
+				} else if fdls[i].IsDir() == true {
 					if showdetail {
 						fmt.Println("child folder:", fullpath)
 					}
@@ -611,98 +609,96 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 							}
 						}
 					} else {
-						if directoryonly == false || fileonly == true {
-							if filenameregex != nil {
-								if namerestr_mapa == false {
-									fnma := filenameregex.FindAllStringSubmatchIndex(fdls[i].Name(), -1)
-									if len(fnma) > 0 {
-										if showdetail {
-											fmt.Println("found name pass file:", fullpath)
-										}
-										newpath := toolfunc.RegexReplace(fullpath, pama, newpathreplacewith)
-										if showdetail {
-											fmt.Println("new path:", newpath)
-										}
-										if fullpath != newpath {
-											if newpathnomove == false {
-												toolfunc.MoveFile(fullpath, newpath)
-											}
-											fmt.Println(fullpath, " new path:", newpath)
-										} else {
-											fmt.Println(fullpath)
-										}
-										*results = append(*results, fullpath)
-
-										if removeResultFile {
-											rme := os.Remove(fullpath)
-											if rme != nil {
-												log.Println("remove file error:", fullpath, rme)
-											} else {
-												fmt.Println("remove file ok:", fullpath)
-											}
-										}
+						if filenameregex != nil {
+							if namerestr_mapa == false {
+								fnma := filenameregex.FindAllStringSubmatchIndex(fdls[i].Name(), -1)
+								if len(fnma) > 0 {
+									if showdetail {
+										fmt.Println("found name pass file:", fullpath)
 									}
-								} else {
-									fnma := filenameregex.FindAllStringSubmatchIndex(fullpath, -1)
-									if len(fnma) > 0 {
-										if showdetail {
-											fmt.Println("found name pass file:", fullpath)
+									newpath := toolfunc.RegexReplace(fullpath, pama, newpathreplacewith)
+									if showdetail {
+										fmt.Println("new path:", newpath)
+									}
+									if fullpath != newpath {
+										if newpathnomove == false {
+											toolfunc.MoveFile(fullpath, newpath)
 										}
-										newpath := toolfunc.RegexReplace(fullpath, pama, newpathreplacewith)
-										if showdetail {
-											fmt.Println("new path:", newpath)
-										}
-										if fullpath != newpath {
-											if newpathnomove == false {
-												toolfunc.MoveFile(fullpath, newpath)
-											}
-											fmt.Println(fullpath, " new path:", newpath)
-										} else {
-											fmt.Println(fullpath)
-										}
-										*results = append(*results, fullpath)
+										fmt.Println(fullpath, " new path:", newpath)
+									} else {
+										fmt.Println(fullpath)
+									}
+									*results = append(*results, fullpath)
 
-										if removeResultFile {
-											rme := os.Remove(fullpath)
-											if rme != nil {
-												log.Println("remove file error:", fullpath, rme)
-											} else {
-												fmt.Println("remove file ok:", fullpath)
-											}
+									if removeResultFile {
+										rme := os.Remove(fullpath)
+										if rme != nil {
+											log.Println("remove file error:", fullpath, rme)
+										} else {
+											fmt.Println("remove file ok:", fullpath)
 										}
 									}
 								}
 							} else {
-								if showdetail {
-									fmt.Println("4found file:", fullpath)
-								}
-								newpath := toolfunc.RegexReplace(fullpath, pama, newpathreplacewith)
-								if showdetail {
-									fmt.Println("new path:", newpath)
-								}
-								if fullpath != newpath {
-									if newpathnomove == false {
-										toolfunc.MoveFile(fullpath, newpath)
+								fnma := filenameregex.FindAllStringSubmatchIndex(fullpath, -1)
+								if len(fnma) > 0 {
+									if showdetail {
+										fmt.Println("found name pass file:", fullpath)
 									}
-									fmt.Println(fullpath, " new path:", newpath)
-								} else {
-									fmt.Println(fullpath)
-								}
-
-								*results = append(*results, fullpath)
-
-								if removeResultFile {
-									rme := os.Remove(fullpath)
-									if rme != nil {
-										log.Println("remove file error:", fullpath, rme)
+									newpath := toolfunc.RegexReplace(fullpath, pama, newpathreplacewith)
+									if showdetail {
+										fmt.Println("new path:", newpath)
+									}
+									if fullpath != newpath {
+										if newpathnomove == false {
+											toolfunc.MoveFile(fullpath, newpath)
+										}
+										fmt.Println(fullpath, " new path:", newpath)
 									} else {
-										fmt.Println("remove file ok:", fullpath)
+										fmt.Println(fullpath)
 									}
+									*results = append(*results, fullpath)
+
+									if removeResultFile {
+										rme := os.Remove(fullpath)
+										if rme != nil {
+											log.Println("remove file error:", fullpath, rme)
+										} else {
+											fmt.Println("remove file ok:", fullpath)
+										}
+									}
+								}
+							}
+						} else {
+							if showdetail {
+								fmt.Println("4found file:", fullpath)
+							}
+							newpath := toolfunc.RegexReplace(fullpath, pama, newpathreplacewith)
+							if showdetail {
+								fmt.Println("new path:", newpath)
+							}
+							if fullpath != newpath {
+								if newpathnomove == false {
+									toolfunc.MoveFile(fullpath, newpath)
+								}
+								fmt.Println(fullpath, " new path:", newpath)
+							} else {
+								fmt.Println(fullpath)
+							}
+
+							*results = append(*results, fullpath)
+
+							if removeResultFile {
+								rme := os.Remove(fullpath)
+								if rme != nil {
+									log.Println("remove file error:", fullpath, rme)
+								} else {
+									fmt.Println("remove file ok:", fullpath)
 								}
 							}
 						}
 					}
-				} else {
+				} else if fdls[i].IsDir() == true {
 					if showdetail {
 						fmt.Println("child folder:", fullpath)
 					}
