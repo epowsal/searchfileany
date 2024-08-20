@@ -89,7 +89,9 @@ searchfileany folder [--searchpathregex= -pr=] [--nameregex= -nr=]  [--namepathr
 			cttrestr = os.Args[i][len("-cr="):]
 		} else if strings.HasPrefix(os.Args[i], "-do") {
 			directoryonly = true
+			fileonly = false
 		} else if strings.HasPrefix(os.Args[i], "-fo") {
+			directoryonly = false
 			fileonly = true
 		} else if strings.HasPrefix(os.Args[i], "-sd") {
 			showdetail = true
@@ -125,6 +127,7 @@ searchfileany folder [--searchpathregex= -pr=] [--nameregex= -nr=]  [--namepathr
 		fmt.Println("replacewithnorename", replacewithnorename)
 		fmt.Println("timebegin:", timebegin.Format(time.RFC3339))
 		fmt.Println("timeend:", timeend.Format(time.RFC3339))
+		time.Sleep(2 * time.Second)
 	}
 	if cttrestr != "" && pathrestr == "" {
 		pathrestr = ".*"
