@@ -387,7 +387,7 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 					if showdetail {
 						fmt.Println("child folder:", fullpath)
 					}
-					if fileonly == false || directoryonly == true {
+					if !(directoryonly == false && fileonly == true) {
 						if filenameregex != nil {
 							if namerestr_mapa == false {
 								fnma := filenameregex.FindAllStringSubmatchIndex(fdls[i].Name(), -1)
@@ -703,7 +703,7 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 					if showdetail {
 						fmt.Println("child folder:", fullpath)
 					}
-					if fileonly == false || directoryonly == true {
+					if !(directoryonly == false && fileonly == true) {
 						if filenameregex != nil {
 							if namerestr_mapa == false {
 								fnma := filenameregex.FindAllStringSubmatchIndex(fdls[i].Name(), -1)
