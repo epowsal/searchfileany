@@ -185,7 +185,7 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 		pama := pathregex.FindAllStringSubmatchIndex(fullpath, -1)
 		if newpathreplacewith == "" {
 			if len(pama) > 0 {
-				if fdls[i].IsDir() == false {
+				if fdls[i].IsDir() == false && !(directoryonly == true && fileonly == false) {
 					if timebegin.IsZero() == false && finfo.ModTime().Unix()-timebegin.Unix() < 0 {
 						if showdetail {
 							fmt.Println("before begin time continue.", finfo.ModTime().Format(time.RFC3339))
@@ -449,7 +449,7 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 			}
 		} else {
 			if len(pama) > 0 {
-				if fdls[i].IsDir() == false {
+				if fdls[i].IsDir() == false && !(directoryonly == true && fileonly == false) {
 					if timebegin.IsZero() == false && finfo.ModTime().Unix()-timebegin.Unix() < 0 {
 						if showdetail {
 							fmt.Println("before begin time continue", finfo.ModTime().Format(time.RFC3339))
