@@ -17,7 +17,11 @@ import (
 func main() {
 	if len(os.Args) == 1 {
 		fmt.Println(`help:
-searchfileany folder [--searchpathregex= -pr=] [--nameregex= -nr=]  [--namepathregex= -npr=] [--contentregex= -cr=] [--directoryonly -do] [--fileonly(default) -fo] [--dirandfile -df] [--deep=] [--timebegin=2006-01-02T15:04:05Z07:00] [--timeend=2006-01-02T15:04:05Z07:00] [--replacewith= match got #0-99 -rw] [--replacewithnorename] [--newpathreplacewith= match got #0-99 -nprw] [--newpathnomove] [--removeResultFile -rf] [--removeResultDir -rd] `,
+searchfileany folder [--searchpathregex= -pr=] [--nameregex= -nr=]  [--namepathregex= -npr=]
+ [--contentregex= -cr=] [--directoryonly -do] [--fileonly(default) -fo] [--dirandfile -df] 
+[--deep=] [--timebegin=2006-01-02T15:04:05Z07:00] [--timeend=2006-01-02T15:04:05Z07:00] 
+[--replacewith= match got #0-99 -rw] [--replacewithnorename] [--newpathreplacewith= match got #0-99 -nprw] 
+[--newpathnomove] [--removeResultFile -rf] [--removeResultDir -rd] [--copyto= -ct=] [--sizerange= -sr=]`,
 		)
 		return
 	}
@@ -31,6 +35,8 @@ searchfileany folder [--searchpathregex= -pr=] [--nameregex= -nr=]  [--namepathr
 	var deep = 1 << 30
 	var timebegin time.Time
 	var timeend time.Time = time.Unix(toolfunc.MAXINT64, 0)
+	var copyto string
+	var sizemin, sizemax int64 = 0, toolfunc.MAXINT64
 
 	for i := 0; i < len(os.Args); i += 1 {
 		if strings.HasPrefix(os.Args[i], "--searchpathregex=") {
@@ -105,6 +111,28 @@ searchfileany folder [--searchpathregex= -pr=] [--nameregex= -nr=]  [--namepathr
 			timebegin, _ = time.Parse(time.RFC3339, os.Args[i][len("-tb="):])
 		} else if strings.HasPrefix(os.Args[i], "-te=") {
 			timeend, _ = time.Parse(time.RFC3339, os.Args[i][len("-te="):])
+		} else if strings.HasPrefix(os.Args[i], "--copyto=") {
+			copyto = toolfunc.StdDir(os.Args[i][len("--copyto="):])
+		} else if strings.HasPrefix(os.Args[i], "-ct=") {
+			copyto = toolfunc.StdDir(os.Args[i][len("-ct="):])
+		} else if strings.HasPrefix(os.Args[i], "--sizerange=") {
+			sls := toolfunc.SplitAny(os.Args[i][len("--sizerange="):], ",-")
+			if len(sls) == 1 {
+				sizemin = toolfunc.Int64FromStr(sls[0])
+				sizemax = toolfunc.Int64FromStr(sls[0])
+			} else if len(sls) == 2 {
+				sizemin = toolfunc.Int64FromStr(sls[0])
+				sizemax = toolfunc.Int64FromStr(sls[1])
+			}
+		} else if strings.HasPrefix(os.Args[i], "-ct=") {
+			sls := toolfunc.SplitAny(os.Args[i][len("-ct="):], ",-")
+			if len(sls) == 1 {
+				sizemin = toolfunc.Int64FromStr(sls[0])
+				sizemax = toolfunc.Int64FromStr(sls[0])
+			} else if len(sls) == 2 {
+				sizemin = toolfunc.Int64FromStr(sls[0])
+				sizemax = toolfunc.Int64FromStr(sls[1])
+			}
 		}
 	}
 	if deep <= 0 {
@@ -127,6 +155,9 @@ searchfileany folder [--searchpathregex= -pr=] [--nameregex= -nr=]  [--namepathr
 		fmt.Println("replacewithnorename", replacewithnorename)
 		fmt.Println("timebegin:", timebegin.Format(time.RFC3339))
 		fmt.Println("timeend:", timeend.Format(time.RFC3339))
+		fmt.Println("copy to:", copyto)
+		fmt.Println("size min:", sizemin)
+		fmt.Println("size max:", sizemax)
 		time.Sleep(2 * time.Second)
 	}
 	if cttrestr != "" && pathrestr == "" {
@@ -151,7 +182,7 @@ searchfileany folder [--searchpathregex= -pr=] [--nameregex= -nr=]  [--namepathr
 	if showdetail {
 		fmt.Println("timeend", timeend)
 	}
-	searchfileany(&results, sdpath, sdpath, pathre, filenamere, cttre, directoryonly, fileonly, showdetail, deep, 1, timebegin, timeend, replacewithstr, replacewithnorename, newpathreplacewith, newpathnomove, namerestr_mapa, removeResultFile, removeResultDir)
+	searchfileany(&results, sdpath, sdpath, pathre, filenamere, cttre, directoryonly, fileonly, showdetail, deep, 1, timebegin, timeend, replacewithstr, replacewithnorename, newpathreplacewith, newpathnomove, namerestr_mapa, removeResultFile, removeResultDir, copyto, sizemin, sizemax)
 	// for(int i=0;i<results.size();i++){
 	//     fmt.Println(results[i])
 	// }
@@ -162,7 +193,7 @@ searchfileany folder [--searchpathregex= -pr=] [--nameregex= -nr=]  [--namepathr
 	//return a.exec();
 }
 
-func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenameregex, contentregex *regexp.Regexp, directoryonly, fileonly, showdetail bool, maxdeep, curdeep int, timebegin, timeend time.Time, replacewithstr string, replacewithnorename bool, newpathreplacewith string, newpathnomove bool, namerestr_mapa, removeResultFile, removeResultDir bool) int {
+func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenameregex, contentregex *regexp.Regexp, directoryonly, fileonly, showdetail bool, maxdeep, curdeep int, timebegin, timeend time.Time, replacewithstr string, replacewithnorename bool, newpathreplacewith string, newpathnomove bool, namerestr_mapa, removeResultFile, removeResultDir bool, copyto string, sizemin, sizemax int64) int {
 	if curdeep > maxdeep {
 		if showdetail {
 			fmt.Println("curdeep > maxdeep", curdeep, maxdeep)
@@ -201,9 +232,12 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 						}
 						continue
 					}
-					if showdetail {
-						fmt.Println("child file:", fullpath)
+					if !(finfo.Size() >= sizemin && finfo.Size() <= sizemax) {
+						continue
 					}
+					// if showdetail {
+					// 	fmt.Println("child file:", fullpath)
+					// }
 					if contentregex != nil {
 						bnamepass := false
 						if filenameregex != nil {
@@ -285,6 +319,9 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 
 										fmt.Println(fullpath)
 										*results = append(*results, fullpath)
+										if copyto != "" {
+											toolfunc.CopyFile(fullpath, copyto+fullpath[len(rootdir):])
+										}
 										if removeResultFile {
 											rme := os.Remove(fullpath)
 											if rme != nil {
@@ -304,6 +341,9 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 												}
 												fmt.Println(fullpath)
 												*results = append(*results, fullpath)
+												if copyto != "" {
+													toolfunc.CopyFile(fullpath, copyto+fullpath[len(rootdir):])
+												}
 
 												if removeResultFile {
 													rme := os.Remove(fullpath)
@@ -337,6 +377,9 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 									}
 									fmt.Println(fullpath)
 									*results = append(*results, fullpath)
+									if copyto != "" {
+										toolfunc.CopyFile(fullpath, copyto+fullpath[len(rootdir):])
+									}
 
 									if removeResultFile {
 										rme := os.Remove(fullpath)
@@ -355,6 +398,9 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 									}
 									fmt.Println(fullpath)
 									*results = append(*results, fullpath)
+									if copyto != "" {
+										toolfunc.CopyFile(fullpath, copyto+fullpath[len(rootdir):])
+									}
 
 									if removeResultFile {
 										rme := os.Remove(fullpath)
@@ -373,6 +419,10 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 							}
 							fmt.Println(fullpath)
 							*results = append(*results, fullpath)
+							if copyto != "" {
+								toolfunc.CopyFile(fullpath, copyto+fullpath[len(rootdir):])
+							}
+
 							if removeResultFile {
 								rme := os.Remove(fullpath)
 								if rme != nil {
@@ -385,9 +435,9 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 						}
 					}
 				} else if fdls[i].IsDir() == true {
-					if showdetail {
-						fmt.Println("child folder:", fullpath)
-					}
+					// if showdetail {
+					// 	fmt.Println("child folder:", fullpath)
+					// }
 					if !(directoryonly == false && fileonly == true) {
 						if filenameregex != nil {
 							if namerestr_mapa == false {
@@ -398,6 +448,9 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 									}
 									fmt.Println(fullpath)
 									*results = append(*results, fullpath)
+									if copyto != "" {
+										toolfunc.CopyDir(fullpath, copyto+fullpath[len(rootdir):])
+									}
 
 									if removeResultDir {
 										rme := os.RemoveAll(fullpath)
@@ -416,6 +469,9 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 									}
 									fmt.Println(fullpath)
 									*results = append(*results, fullpath)
+									if copyto != "" {
+										toolfunc.CopyDir(fullpath, copyto+fullpath[len(rootdir):])
+									}
 
 									if removeResultDir {
 										rme := os.RemoveAll(fullpath)
@@ -433,6 +489,9 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 							}
 							fmt.Println(fullpath)
 							*results = append(*results, fullpath)
+							if copyto != "" {
+								toolfunc.CopyDir(fullpath, copyto+fullpath[len(rootdir):])
+							}
 
 							if removeResultDir {
 								rme := os.RemoveAll(fullpath)
@@ -445,7 +504,7 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 						}
 					}
 
-					searchfileany(results, rootdir, fullpath, pathregex, filenameregex, contentregex, directoryonly, fileonly, showdetail, maxdeep, curdeep+1, timebegin, timeend, replacewithstr, replacewithnorename, newpathreplacewith, newpathnomove, namerestr_mapa, removeResultFile, removeResultDir)
+					searchfileany(results, rootdir, fullpath, pathregex, filenameregex, contentregex, directoryonly, fileonly, showdetail, maxdeep, curdeep+1, timebegin, timeend, replacewithstr, replacewithnorename, newpathreplacewith, newpathnomove, namerestr_mapa, removeResultFile, removeResultDir, copyto, sizemin, sizemax)
 				}
 			}
 		} else {
@@ -463,9 +522,12 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 						}
 						continue
 					}
-					if showdetail {
-						fmt.Println("child file:", fullpath)
+					if !(finfo.Size() >= sizemin && finfo.Size() <= sizemax) {
+						continue
 					}
+					// if showdetail {
+					// 	fmt.Println("child file:", fullpath)
+					// }
 					if contentregex != nil {
 						bnamepass := false
 						if filenameregex != nil {
@@ -555,6 +617,9 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 											fmt.Println(fullpath)
 										}
 										*results = append(*results, fullpath)
+										if copyto != "" {
+											toolfunc.CopyFile(fullpath, copyto+fullpath[len(rootdir):])
+										}
 
 										if removeResultFile {
 											rme := os.Remove(fullpath)
@@ -586,6 +651,9 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 													fmt.Println(fullpath)
 												}
 												*results = append(*results, fullpath)
+												if copyto != "" {
+													toolfunc.CopyFile(fullpath, copyto+fullpath[len(rootdir):])
+												}
 
 												if removeResultFile {
 													rme := os.Remove(fullpath)
@@ -629,6 +697,9 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 										fmt.Println(fullpath)
 									}
 									*results = append(*results, fullpath)
+									if copyto != "" {
+										toolfunc.CopyFile(fullpath, copyto+fullpath[len(rootdir):])
+									}
 
 									if removeResultFile {
 										rme := os.Remove(fullpath)
@@ -658,6 +729,9 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 										fmt.Println(fullpath)
 									}
 									*results = append(*results, fullpath)
+									if copyto != "" {
+										toolfunc.CopyFile(fullpath, copyto+fullpath[len(rootdir):])
+									}
 
 									if removeResultFile {
 										rme := os.Remove(fullpath)
@@ -687,6 +761,9 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 							}
 
 							*results = append(*results, fullpath)
+							if copyto != "" {
+								toolfunc.CopyFile(fullpath, copyto+fullpath[len(rootdir):])
+							}
 
 							if removeResultFile {
 								rme := os.Remove(fullpath)
@@ -699,9 +776,9 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 						}
 					}
 				} else if fdls[i].IsDir() == true {
-					if showdetail {
-						fmt.Println("child folder:", fullpath)
-					}
+					// if showdetail {
+					// 	fmt.Println("child folder:", fullpath)
+					// }
 					if !(directoryonly == false && fileonly == true) {
 						if filenameregex != nil {
 							if namerestr_mapa == false {
@@ -712,6 +789,9 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 									}
 									fmt.Println(fullpath)
 									*results = append(*results, fullpath)
+									if copyto != "" {
+										toolfunc.CopyDir(fullpath, copyto+fullpath[len(rootdir):])
+									}
 
 									if removeResultDir {
 										rme := os.Remove(fullpath)
@@ -730,6 +810,9 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 									}
 									fmt.Println(fullpath)
 									*results = append(*results, fullpath)
+									if copyto != "" {
+										toolfunc.CopyDir(fullpath, copyto+fullpath[len(rootdir):])
+									}
 
 									if removeResultDir {
 										rme := os.Remove(fullpath)
@@ -747,6 +830,9 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 							}
 							fmt.Println(fullpath)
 							*results = append(*results, fullpath)
+							if copyto != "" {
+								toolfunc.CopyDir(fullpath, copyto+fullpath[len(rootdir):])
+							}
 
 							if removeResultDir {
 								rme := os.Remove(fullpath)
@@ -759,7 +845,7 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 						}
 					}
 
-					searchfileany(results, rootdir, fullpath, pathregex, filenameregex, contentregex, directoryonly, fileonly, showdetail, maxdeep, curdeep+1, timebegin, timeend, replacewithstr, replacewithnorename, newpathreplacewith, newpathnomove, namerestr_mapa, removeResultFile, removeResultDir)
+					searchfileany(results, rootdir, fullpath, pathregex, filenameregex, contentregex, directoryonly, fileonly, showdetail, maxdeep, curdeep+1, timebegin, timeend, replacewithstr, replacewithnorename, newpathreplacewith, newpathnomove, namerestr_mapa, removeResultFile, removeResultDir, copyto, sizemin, sizemax)
 				}
 			}
 		}
