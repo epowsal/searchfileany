@@ -59,7 +59,7 @@ mv source target
 			}
 		}
 	} else if os.Args[1] == "ls" {
-		if len(os.Args) == 3 {
+		if len(os.Args) >= 3 {
 			if os.Args[2][0] != '-' {
 				els, _ := os.ReadDir(os.Args[2])
 				s1 := []string{}
@@ -73,7 +73,9 @@ mv source target
 							df = "d "
 						}
 						var ode, linkpath string
-						ode = fmt.Sprintln("%04d", e.Type()&os.ModePerm)
+						if in.IsDir() == false {
+							ode = fmt.Sprintf("%04d", in.Mode())
+						}
 						if 0 != e.Type()&os.ModeDir {
 							ode += "dir|"
 						}
@@ -113,15 +115,28 @@ mv source target
 						s3 = append(s3, e.Name()+"  "+linkpath)
 					}
 				}
+				var re *regexp.Regexp
+				if len(os.Args) == 4 {
+					re = regexp.MustCompile(os.Args[3])
+				}
 				s := []byte{}
 				maxode := 0
 				for i := 0; i < len(s1); i += 1 {
+					if strings.HasSuffix(s2[i], "|") {
+						s2[i] = s2[i][:len(s2[i])-1]
+					}
 					if len(s2[i]) > maxode {
 						maxode = len(s2[i])
 					}
 				}
 				for i := 0; i < len(s1); i += 1 {
-					s = append(s, []byte(s1[1]+"  "+toolfunc.FixLenWithFillRight(s2[i], maxode, ' ')+"  "+s3[i]+"\n")...)
+					li := s1[i] + "  " + toolfunc.FixLenWithFillRight(s2[i], maxode, ' ') + "  " + s3[i] + "\n"
+					if re != nil {
+						if !re.MatchString(li) {
+							continue
+						}
+					}
+					s = append(s, []byte(li)...)
 				}
 				fmt.Println(string(s))
 				return
