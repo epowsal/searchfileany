@@ -293,9 +293,9 @@ mv source target
 	sdpath := toolfunc.ToAbsolutePath(os.Args[1])
 
 	if showdetail {
-		fmt.Println("do search parameter path regex:", pathrestr)
+		fmt.Println("path regex:", pathrestr)
 		fmt.Println("name regex:", filenamerestr)
-		fmt.Println("name path regex:", namerestr_mapa)
+		fmt.Println("name regex match full path:", namerestr_mapa)
 		fmt.Println("content regex:", cttrestr)
 		fmt.Println("folder only:", directoryonly)
 		fmt.Println("file only:", fileonly)
@@ -435,10 +435,9 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 								ff.Seek(0, os.SEEK_SET)
 								var prerd []byte
 								bclose := false
-								curd2 := bytespool.Get(32 * 1024 * 1024)
-								defer bytespool.Put(curd2)
-								for fi := int64(0); fi < ffsize; fi += 32 * 1024 * 1024 {
-									rdn, _ := ff.Read(curd2[1024 : 32*1024*1024])
+								curd2 := bytespool.Get(2 * 1024 * 1024)
+								for fi := int64(0); fi < ffsize; fi += 2 * 1024 * 1024 {
+									rdn, _ := ff.Read(curd2[1024 : 2*1024*1024])
 									if rdn <= 0 {
 										break
 									}
@@ -449,10 +448,15 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 									} else {
 										curd = curd2[1024 : 1024+rdn]
 									}
-									ffnma := contentregex.FindAllStringSubmatchIndex(string(curd), -1)
+									ffnma := contentregex.FindAllSubmatchIndex(curd, -1)
 									//fmt.Println("len(prerd) == 0 && ffsize == int64(len(curd)) && replacewithstr ", len(prerd), 0, ffsize, int64(len(curd)), replacewithstr)
 									if len(prerd) == 0 && ffsize == int64(len(curd)) && replacewithstr != "" {
-										newctt := toolfunc.RegexReplace(string(curd), ffnma, replacewithstr)
+										bclose = true
+										ff.Close()
+										if showdetail == true {
+											fmt.Println("ffnma, replacewithstr", len(ffnma), replacewithstr)
+										}
+										newctt := toolfunc.FoundAllRegexReplace(curd, ffnma, replacewithstr)
 										if showdetail {
 											if len(newctt) < 128 {
 											}
@@ -460,8 +464,8 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 										} else {
 											//fmt.Println("file conntent replace new", newctt[:128])
 										}
-										fmt.Println("newctt != string(curd) ", newctt != string(curd), newctt, " dkfdslfkjl\n", string(curd))
-										if newctt != string(curd) {
+										//fmt.Println("newctt != string(curd) ", newctt != string(curd), newctt, " dkfdslfkjl\n", string(curd))
+										if string(newctt) != string(curd) {
 											if showdetail {
 												fmt.Println("newctt != string(curd)")
 											}
@@ -481,7 +485,7 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 											}
 										}
 
-										newpath := toolfunc.RegexReplace(fullpath, fnma, newpathreplacewith)
+										newpath := string(toolfunc.FoundAllRegexReplace([]byte(fullpath), fnma, newpathreplacewith))
 										if showdetail {
 											fmt.Println("old path:", fullpath)
 											fmt.Println("new path:", newpath)
@@ -554,6 +558,7 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 										prerd = curd
 									}
 								}
+								bytespool.Put(curd2)
 								if bclose == false {
 									ff.Close()
 								}
@@ -594,7 +599,7 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 							} else {
 								fnma = filenameregex.FindAllStringSubmatchIndex(fullpath, -1)
 								if len(fnma) > 0 {
-									newpath := toolfunc.RegexReplace(fullpath, fnma, newpathreplacewith)
+									newpath := string(toolfunc.FoundAllRegexReplace([]byte(fullpath), fnma, newpathreplacewith))
 									if showdetail {
 										fmt.Println("old path:", fullpath)
 										fmt.Println("new path:", newpath)
@@ -702,7 +707,7 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 							} else {
 								fnma = filenameregex.FindAllStringSubmatchIndex(fullpath, -1)
 								if len(fnma) > 0 {
-									newpath := toolfunc.RegexReplace(fullpath, fnma, newpathreplacewith)
+									newpath := string(toolfunc.FoundAllRegexReplace([]byte(fullpath), fnma, newpathreplacewith))
 									if showdetail {
 										fmt.Println("old path:", fullpath)
 										fmt.Println("new path:", newpath)
@@ -829,10 +834,9 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 								ff.Seek(0, os.SEEK_SET)
 								var prerd []byte
 								bclose := false
-								var curd2 = bytespool.Get(32 * 1024 * 1024)
-								defer bytespool.Put(curd2)
-								for fi := int64(0); fi < ffsize; fi += 32 * 1024 * 1024 {
-									rdn, _ := ff.Read(curd2[1024 : 32*1024*1024])
+								var curd2 = bytespool.Get(2 * 1024 * 1024)
+								for fi := int64(0); fi < ffsize; fi += 2 * 1024 * 1024 {
+									rdn, _ := ff.Read(curd2[1024 : 2*1024*1024])
 									if rdn <= 0 {
 										break
 									}
@@ -843,9 +847,14 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 									} else {
 										curd = curd2[1024 : 1024+rdn]
 									}
-									ffnma := contentregex.FindAllStringSubmatchIndex(string(curd), -1)
+									ffnma := contentregex.FindAllSubmatchIndex(curd, -1)
 									if len(prerd) == 0 && ffsize == int64(len(curd)) && replacewithstr != "" {
-										newctt := toolfunc.RegexReplace(string(curd), ffnma, replacewithstr)
+										bclose = true
+										ff.Close()
+										if showdetail == true {
+											fmt.Println("ffnma, replacewithstr", len(ffnma), replacewithstr)
+										}
+										newctt := toolfunc.FoundAllRegexReplace(curd, ffnma, replacewithstr)
 										if showdetail {
 											if len(newctt) < 128 {
 											}
@@ -854,9 +863,9 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 											//fmt.Println("file conntent replace new", newctt[:128])
 										}
 										if showdetail {
-											fmt.Println("newctt != string(curd)", newctt != string(curd))
+											fmt.Println("newctt != string(curd)", string(newctt) != string(curd))
 										}
-										if newctt != string(curd) {
+										if string(newctt) != string(curd) {
 											ff2, ff2e := os.OpenFile(fullpath+".sfanew", os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0666)
 											if ff2e == nil {
 												ff2.Write([]byte(newctt))
@@ -872,7 +881,7 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 
 										fmt.Println(fullpath)
 
-										newpath := toolfunc.RegexReplace(fullpath, fnma, newpathreplacewith)
+										newpath := string(toolfunc.FoundAllRegexReplace([]byte(fullpath), fnma, newpathreplacewith))
 										if showdetail {
 											fmt.Println("old path:", fullpath)
 											fmt.Println("new path:", newpath)
@@ -914,7 +923,7 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 												if showdetail {
 													fmt.Println("3found file:", fullpath)
 												}
-												newpath := toolfunc.RegexReplace(fullpath, fnma, newpathreplacewith)
+												newpath := string(toolfunc.FoundAllRegexReplace([]byte(fullpath), fnma, newpathreplacewith))
 												if showdetail {
 													fmt.Println("old path:", fullpath)
 													fmt.Println("new path:", newpath)
@@ -954,6 +963,7 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 										prerd = curd
 									}
 								}
+								bytespool.Put(curd2)
 								if bclose == false {
 									ff.Close()
 								}
@@ -968,7 +978,7 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 									if showdetail {
 										fmt.Println("found name pass file:", fullpath)
 									}
-									newpath := toolfunc.RegexReplace(fullpath, fnma, newpathreplacewith)
+									newpath := string(toolfunc.FoundAllRegexReplace([]byte(fullpath), fnma, newpathreplacewith))
 									if showdetail {
 										fmt.Println("old path:", fullpath)
 										fmt.Println("new path:", newpath)
@@ -1008,7 +1018,7 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 									if showdetail {
 										fmt.Println("found name pass file:", fullpath)
 									}
-									newpath := toolfunc.RegexReplace(fullpath, fnma, newpathreplacewith)
+									newpath := string(toolfunc.FoundAllRegexReplace([]byte(fullpath), fnma, newpathreplacewith))
 									if showdetail {
 										fmt.Println("old path:", fullpath)
 										fmt.Println("new path:", newpath)
@@ -1046,7 +1056,7 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 							if showdetail {
 								fmt.Println("4found file:", fullpath)
 							}
-							newpath := toolfunc.RegexReplace(fullpath, fnma, newpathreplacewith)
+							newpath := string(toolfunc.FoundAllRegexReplace([]byte(fullpath), fnma, newpathreplacewith))
 							if showdetail {
 								fmt.Println("old path:", fullpath)
 								fmt.Println("new path:", newpath)
@@ -1120,7 +1130,7 @@ func searchfileany(results *[]string, rootdir, curdir string, pathregex, filenam
 							} else {
 								fnma = filenameregex.FindAllStringSubmatchIndex(fullpath, -1)
 								if len(fnma) > 0 {
-									newpath := toolfunc.RegexReplace(fullpath, fnma, newpathreplacewith)
+									newpath := string(toolfunc.FoundAllRegexReplace([]byte(fullpath), fnma, newpathreplacewith))
 									if showdetail {
 										fmt.Println("old path:", fullpath)
 										fmt.Println("new path:", newpath)
